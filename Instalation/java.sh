@@ -12,7 +12,7 @@ command -v mvn &> /dev/null || { echo "[ERREUR] Maven non trouvé"; exit 1; }
 
 cd "$TARGET_DIR" || exit 1
 
-echo "Compilation de l'application..."
+echo "Compilation de Al'application..."
 sudo -u "$USERNAME" mvn clean package -DskipTests
 
 # Recherche du JAR

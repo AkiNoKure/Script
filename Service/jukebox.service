@@ -1,0 +1,13 @@
+[Unit]
+Description=Service Jukebox - Campus La Futaie
+After=network.target
+
+[Service]
+ExecStart=/bin/bash /chemin/vers/votre/start_jukebox.sh
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/jukebox.log
+StandardError=append:/var/log/jukebox.log
+
+[Install]
+WantedBy=multi-user.target
