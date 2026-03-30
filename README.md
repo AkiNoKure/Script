@@ -1,7 +1,3 @@
-Voici une proposition de fichier README.md structuré pour votre projet. Ce document présente le contexte du concours, l'architecture technique et les procédures d'utilisation des scripts de déploiement.
-
----
-
 # Projet Jukebox - Campus La Futaie
 
 ## 1. Contexte du projet
