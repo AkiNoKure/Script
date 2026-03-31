@@ -90,5 +90,11 @@ else
     sudo systemctl stop jukebox.service 2>/dev/null
     sudo systemctl disable jukebox.service 2>/dev/null
 fi
+# Dans deploy.sh, juste avant le message de fin
+echo "Finalisation des permissions d'exécution..."
+sudo chmod -R a+x "$BASE_DIR"
+sudo chmod a+x "$START_SCRIPT"
 
+# Nettoyage des anciens logs de test
+sudo rm -f /tmp/jukebox_start.log
 echo "[OK] Déploiement terminé."
