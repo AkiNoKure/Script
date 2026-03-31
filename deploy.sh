@@ -17,8 +17,8 @@ echo "--- [$(date)] Déploiement Jukebox ---"
 
 # --- Configuration du répertoire ---
 ask_if_empty "USERNAME" "Nom de l'utilisateur système"
-read -p "Répertoire d'installation (Défaut: /home/$USERNAME/application/clonerici) : " TARGET_DIR
-TARGET_DIR=${TARGET_DIR:-"/home/$USERNAME/application/clonerici"}
+read -p "Répertoire d'installation (Défaut: /home/$USERNAME/Application/Jukebox) : " TARGET_DIR
+TARGET_DIR=${TARGET_DIR:-"/home/$USERNAME/Application/Jukebox"}
 
 ask_if_empty "REPO_URL" "URL du dépôt Git"
 ask_if_empty "APP_TYPE_INPUT" "Type (1: Java, 2: PHP)"
