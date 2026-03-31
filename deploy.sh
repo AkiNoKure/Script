@@ -27,6 +27,14 @@ BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 INSTALL_DIR="$BASE_DIR/Instalation"
 START_SCRIPT="$BASE_DIR/start_jukebox.sh"
 
+# Correction du chemin d'appel pour garantir la transmission des variables
+if [ -f "$INSTALL_DIR/$APP_L.sh" ]; then
+    bash "$INSTALL_DIR/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
+else
+    echo "Erreur : Script d'installation $INSTALL_DIR/$APP_L.sh introuvable."
+    exit 1
+fi
+
 # --- Clonage ---
 sudo mkdir -p "$TARGET_DIR"
 sudo chown "$USERNAME":"$USERNAME" "$TARGET_DIR"
