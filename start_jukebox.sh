@@ -16,5 +16,11 @@ if [ "$APP_TYPE" == "java" ]; then
     fi
 elif [ "$APP_TYPE" == "php" ]; then
     cd "$APP_PATH"
-    [ -d "public" ] && exec php -S 0.0.0.0:606 -t public/ || exec php -S 0.0.0.0:606
+    echo "Lancement du serveur PHP sur le port 606..."
+    # On force l'affichage des erreurs pour voir si le serveur crash au démarrage
+    if [ -d "public" ]; then
+        exec php -S 0.0.0.0:606 -t public/
+    else
+        exec php -S 0.0.0.0:606
+    fi
 fi
