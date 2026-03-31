@@ -13,5 +13,5 @@ if [ "$APP_TYPE" == "java" ]; then
     fi
 elif [ "$APP_TYPE" == "php" ]; then
     cd "$APP_PATH"
-    [ -d "public" ] && exec php -S 0.0.0.0:606 -t public/ || exec php -S 0.0.0.0:606
+    [ -d "public" ] && exec php -S 0.0.0.0:125 -t public/ || exec php -S 0.0.0.0:125
 fi
