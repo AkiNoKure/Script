@@ -2,6 +2,19 @@
 TARGET_DIR=$1
 USERNAME=$2
 
+# --- Mise à jour et installation des dépendances ---
+install_if_missing() {
+    local cmd=$1 pkg=$2
+    if ! command -v "$cmd" &> /dev/null; then
+        echo "[INFO] Installation de $pkg..."
+        sudo apt-get update
+        sudo apt-get install -y "$pkg"
+    fi
+}
+
+install_if_missing java default-jdk
+install_if_missing ant ant
+
 if [ ! -d "$TARGET_DIR" ]; then
     echo "[ERREUR] Le répertoire $TARGET_DIR n'existe pas."
     exit 1
@@ -51,5 +64,4 @@ if [ -n "$ANT_PATH" ]; then
         sudo -u "$USERNAME" JAVA_HOME="$JAVA_HOME" ant jar
     fi
 else
-    echo "Aucun fichier build.xml trouvé."
-fi
+    echo
