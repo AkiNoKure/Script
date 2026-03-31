@@ -53,7 +53,7 @@ if [ -n "$FILES" ]; then
                 cp "$f_ex" "$f_final_path"
                 chown "$USERNAME" "$f_final_path"
                 echo "Ouverture de l'éditeur pour $f_final..."
-                sudo -u "$USERNAME" ${EDITOR:-nano} "$f_final_path"
+                sudo -u "$USERNAME" ${EDITOR:-nano} "$f_final_path" < /dev/tty"
             fi
         fi
     done

@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# --- Journalisation ---
 LOG_FILE="/var/log/jukebox_deploy.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
 
 ask_if_empty() {
     local var_name=$1
