@@ -1,46 +1,43 @@
 #!/bin/bash
 set -eo pipefail
-# ...existing code...
 
-TARGET_DIR=${1:-$TARGET_DIR}
-USERNAME=${2:-$USERNAME}
+TARGET_DIR=$1
+USERNAME=$2
 
-echo "--- Configuration Java : $TARGET_DIR ---"
+# On se déplace dans le sous-dossier du projet si nécessaire
+# (Le repo GitHub a un dossier PJ_internet_subscription à l'intérieur)
+if [ -d "$TARGET_DIR/PJ_internet_subscription" ]; then
+    cd "$TARGET_DIR/PJ_internet_subscription"
+else
+    cd "$TARGET_DIR"
+fi
 
-install_if_missing() {
-  local cmd=$1 pkg=$2
-  if command -v "$cmd" &> /dev/null; then
-    return 0
-  fi
-  if command -v apt-get &> /dev/null; then
-    sudo apt-get update
-    sudo apt-get install -y "$pkg"
-  else
-    echo "[ERREUR] $cmd absent et apt-get non disponible. Installez $pkg manuellement."
-    exit 1
-  fi
-}
+echo "Configuration de l'environnement Java (NetBeans Project)..."
 
-install_if_missing java default-jdk
-install_if_missing mvn maven
+# 1. Vérification de Java
+command -v java &> /dev/null || { echo "[ERREUR] Java non trouvé"; exit 1; }
 
-cd "$TARGET_DIR" || exit 1
+# 2. Tentative de compilation si un dossier src existe
+if [ -d "src" ]; then
+    echo "Compilation manuelle des sources..."
+    mkdir -p build
+    # On trouve tous les fichiers .java et on les compile vers le dossier build
+    find src -name "*.java" > sources.txt
+    javac -d build @sources.txt
+    
+    echo "Création du fichier JAR..."
+    jar cfe target/app.jar Main -C build . 
+    # Note : "Main" doit être remplacé par le nom de ta classe principale (ex: pj_internet_subscription.Main)
+fi
 
-echo "Compilation de l'application..."
-sudo -u "$USERNAME" mvn clean package -DskipTests
-
-JAR_FILE=$(find target -name "*.jar" | head -n 1)
+# 3. Vérification du JAR
+JAR_FILE=$(find . -name "*.jar" | head -n 1)
 
 if [ -n "$JAR_FILE" ]; then
-    echo "Arrêt de l'ancienne instance si nécessaire..."
-    pkill -f "$JAR_FILE" || true 
-
-    echo "Lancement de $JAR_FILE..."
-    sudo -u "$USERNAME" nohup java -jar "$JAR_FILE" > app.log 2>&1 &
-    
-    echo "[OK] Application lancée en arrière-plan."
-    echo "Logs disponibles ici : $TARGET_DIR/app.log"
+    echo "[OK] Fichier executable trouvé : $JAR_FILE"
+    # On déplace le JAR à la racine pour start_jukebox.sh
+    cp "$JAR_FILE" "$TARGET_DIR/app.jar"
 else
-    echo "[ERREUR] Aucun fichier JAR trouvé dans le dossier target."
+    echo "[ERREUR] Aucun JAR trouvé et la compilation manuelle a échoué."
     exit 1
 fi

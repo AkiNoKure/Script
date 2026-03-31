@@ -18,6 +18,10 @@ if [ "$APP_TYPE" == "java" ]; then
     fi
 elif [ "$APP_TYPE" == "php" ]; then
     cd "$APP_PATH"
-    # Lancement du serveur PHP sur le port 80
-    exec php -S 0.0.0.0:80 -t public/
+
+    if [ -d "public" ]; then
+    exec php -S 0.0.0.0:606 -t public/
+    else
+    exec php -S 0.0.0.0:606
+    fi
 fi
