@@ -1,35 +1,25 @@
 #!/bin/bash
-set -eo pipefail
-
 TARGET_DIR=$1
 USERNAME=$2
-
-echo "--- Configuration PHP : $TARGET_DIR ---"
-
-install_if_missing() {
-  local cmd=$1 pkgs=$2
-  if ! command -v "$cmd" &> /dev/null; then
-    sudo apt-get update && sudo apt-get install -y $pkgs
-  fi
-}
-
-install_if_missing php "php-cli php-zip unzip curl php-xml php-mbstring"
-
-if ! command -v composer &> /dev/null; then
-    curl -sS https://getcomposer.org/installer | php
-    sudo mv composer.phar /usr/local/bin/composer
-fi
-
 cd "$TARGET_DIR" || exit 1
 
-echo "Installation des dépendances Composer..."
+echo "--- Scan des configurations PHP ---"
+mapfile -t FILES < <(find . -type f \( -name "*.exemple" -o -name "*.example" \))
+
+for f_ex in "${FILES[@]}"; do
+    f_final="${f_ex%.exemple}"
+    f_final="${f_final%.example}"
+    
+    if [ ! -f "$f_final" ]; then
+        cp "$f_ex" "$f_final"
+        chown "$USERNAME" "$f_final"
+        echo "Fichier créé : $f_final"
+        read -p "Modifier $f_final maintenant ? (o/n) : " modif
+        [ [[ "$modif" =~ ^[oO]$ ]] ] && sudo -u "$USERNAME" ${EDITOR:-nano} "$f_final"
+    fi
+done
+
+# Installation Composer
 sudo -u "$USERNAME" composer install --no-dev --optimize-autoloader --no-interaction
-
-if [ -f .env.example ] && [ ! -f .env ]; then
-    sudo -u "$USERNAME" cp .env.example .env
-fi
-
-echo "Finalisation des permissions..."
 sudo chown -R "$USERNAME":www-data .
-mkdir -p storage bootstrap/cache
-sudo chmod -R 775 storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache 2>/dev/null || true

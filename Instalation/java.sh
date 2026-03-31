@@ -1,33 +1,28 @@
 #!/bin/bash
 TARGET_DIR=$1
 USERNAME=$2
-
 cd "$TARGET_DIR" || exit 1
 
-echo "-------------------------------------------------------"
-echo "Verification de la configuration locale..."
+echo "--- Scan des configurations Java ---"
+# Recherche récursive de .exemple et .example
+mapfile -t FILES < <(find . -type f \( -name "*.exemple" -o -name "*.example" \))
 
-mapfile -t FICHIERS_EXEMPLE < <(find . -name "*.exemple")
-
-if [ ${#FICHIERS_EXEMPLE[@]} -eq 0 ]; then
-    echo "Aucun fichier modele (.exemple) detecte."
-else
-    for f_ex in "${FICHIERS_EXEMPLE[@]}"; do
-        f_final="${f_ex%.exemple}"
-        if [ ! -f "$f_final" ]; then
+for f_ex in "${FILES[@]}"; do
+    f_final="${f_ex%.exemple}"
+    f_final="${f_final%.example}"
+    
+    if [ ! -f "$f_final" ]; then
+        read -p "Créer $f_final depuis modèle ? (o/n) : " choix
+        if [[ "$choix" =~ ^[oO]$ ]]; then
             cp "$f_ex" "$f_final"
             chown "$USERNAME" "$f_final"
-            echo "Fichier cree : $f_final (Editez-le manuellement si besoin)"
+            read -p "Modifier le fichier maintenant ? (o/n) : " modif
+            [ [[ "$modif" =~ ^[oO]$ ]] ] && sudo -u "$USERNAME" ${EDITOR:-nano} "$f_final"
         fi
-    done
-fi
+    fi
+done
 
-echo "Lancement de la compilation..."
-# Remplacez par votre commande réelle (ex: mvn package ou ant)
-if [ -f "./mvnw" ]; then
-    sudo -u "$USERNAME" ./mvnw clean package -DskipTests
-elif [ -f "pom.xml" ]; then
+# Build Maven automatique
+if [ -f "pom.xml" ]; then
     sudo -u "$USERNAME" mvn clean package -DskipTests
-else
-    echo "Aucun outil de build (Maven) détecté."
 fi
