@@ -27,13 +27,7 @@ BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 INSTALL_DIR="$BASE_DIR/Instalation"
 START_SCRIPT="$BASE_DIR/start_jukebox.sh"
 
-# Correction du chemin d'appel pour garantir la transmission des variables
-if [ -f "$INSTALL_DIR/$APP_L.sh" ]; then
-    bash "$INSTALL_DIR/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
-else
-    echo "Erreur : Script d'installation $INSTALL_DIR/$APP_L.sh introuvable."
-    exit 1
-fi
+
 
 # --- Clonage ---
 sudo mkdir -p "$TARGET_DIR"
@@ -50,6 +44,12 @@ sed -i "s|^APP_PATH=.*|APP_PATH=\"$TARGET_DIR\"|" "$START_SCRIPT"
 sed -i "s|^USER_NAME=.*|USER_NAME=\"$USERNAME\"|" "$START_SCRIPT"
 [ "$APP_TYPE_INPUT" == "1" ] && APP_L="java" || APP_L="php"
 sed -i "s|^APP_TYPE=.*|APP_TYPE=\"$APP_L\"|" "$START_SCRIPT"
-
+# Correction du chemin d'appel pour garantir la transmission des variables
+if [ -f "$INSTALL_DIR/$APP_L.sh" ]; then
+    bash "$INSTALL_DIR/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
+else
+    echo "Erreur : Script d'installation $INSTALL_DIR/$APP_L.sh introuvable."
+    exit 1
+fi
 # --- Exécution du script d'installation ---
 bash "$INSTALL_DIR/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
