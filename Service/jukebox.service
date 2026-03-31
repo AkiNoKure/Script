@@ -4,7 +4,6 @@ After=network.target
 
 [Service]
 Type=simple
-# On lance en root pour que fuser et les redirections fonctionnent
 User=root
 WorkingDirectory=/home/jukebox_play/Application/Jukebox
 ExecStart=/bin/bash /home/administrateur/Documents/Script/start_jukebox.sh
