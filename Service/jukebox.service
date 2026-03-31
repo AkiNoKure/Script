@@ -3,6 +3,7 @@ Description=Service Jukebox - Campus La Futaie
 After=network.target
 
 [Service]
+Type=simple
 ExecStart=/bin/bash /chemin/vers/votre/start_jukebox.sh
 Restart=always
 RestartSec=10

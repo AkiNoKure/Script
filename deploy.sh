@@ -16,7 +16,7 @@ echo "--- Système de Déploiement Jukebox (Campus La Futaie) ---"
 ask_if_empty "USERNAME" "Nom de l'utilisateur système"
 ask_if_empty "REPO_URL" "URL du dépôt Git"
 ask_if_empty "TARGET_DIR" "Répertoire de destination (chemin complet)"
-ask_if_empty "APP_TYPE" "Type d'application (1: Java, 2: PHP)"
+ask_if_empty "APP_TYPE_INPUT" "Type d'application (1: Java, 2: PHP)"
 
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 INSTALL_DIR="$BASE_DIR/Instalation"
@@ -35,16 +35,19 @@ fi
 echo "Mise à jour de la configuration de démarrage..."
 sed -i "s|^APP_PATH=.*|APP_PATH=\"$TARGET_DIR\"|" "$START_SCRIPT"
 sed -i "s|^USER_NAME=.*|USER_NAME=\"$USERNAME\"|" "$START_SCRIPT"
-if [ "$APP_TYPE" == "1" ]; then
+
+if [ "$APP_TYPE_INPUT" == "1" ]; then
+    APP_LABEL="java"
     sed -i "s|^APP_TYPE=.*|APP_TYPE=\"java\"|" "$START_SCRIPT"
 else
+    APP_LABEL="php"
     sed -i "s|^APP_TYPE=.*|APP_TYPE=\"php\"|" "$START_SCRIPT"
 fi
 
 # --- 5. Exécution du build spécifique ---
-case $APP_TYPE in
-    1) [ -f "$INSTALL_DIR/java.sh" ] && bash "$INSTALL_DIR/java.sh" "$TARGET_DIR" "$USERNAME" ;;
-    2) [ -f "$INSTALL_DIR/php.sh" ] && bash "$INSTALL_DIR/php.sh" "$TARGET_DIR" "$USERNAME" ;;
+case $APP_LABEL in
+    "java") [ -f "$INSTALL_DIR/java.sh" ] && bash "$INSTALL_DIR/java.sh" "$TARGET_DIR" "$USERNAME" ;;
+    "php")  [ -f "$INSTALL_DIR/php.sh" ] && bash "$INSTALL_DIR/php.sh" "$TARGET_DIR" "$USERNAME" ;;
 esac
 
 # --- 6. Activation du service systemd ---
@@ -55,5 +58,5 @@ if [ -f "$SERVICE_DIR/jukebox.service" ]; then
     sudo systemctl daemon-reload
     sudo systemctl enable jukebox.service
     sudo systemctl restart jukebox.service
-    echo "[OK] Jukebox opérationnel et configuré pour le redémarrage."
+    echo "[OK] Jukebox opérationnel."
 fi
