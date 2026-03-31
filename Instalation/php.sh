@@ -2,29 +2,18 @@
 TARGET_DIR=$1
 USERNAME=$2
 
-# --- 1. Installation des dépendances système ---
-install_deps() {
-    echo "--- Vérification des dépendances PHP ---"
-    sudo apt-get update -qq
-    sudo apt-get install -y php-cli php-zip unzip curl php-xml php-mbstring
-}
+echo "--- Vérification des dépendances PHP ---"
+sudo apt-get update -qq
+sudo apt-get install -y php-cli php-zip unzip curl php-xml php-mbstring
 
-if [ ! -d "$TARGET_DIR" ]; then
-    echo "[ERREUR] Le répertoire $TARGET_DIR n'existe pas."
-    exit 1
-fi
-
-install_deps
 cd "$TARGET_DIR" || exit 1
 
-# --- 2. Scan et Correction des fichiers modèles ---
 echo "--- Scan des fichiers de configuration ---"
 FILES=$(find . -type f \( -iname "*exem*" -o -iname "*exam*" \))
 
 if [ -n "$FILES" ]; then
     for f_ex in $FILES; do
         [[ "$f_ex" == *"/.git/"* ]] || [[ "$f_ex" == *"/vendor/"* ]] && continue
-        
         clean_name=$(basename "$f_ex")
         dir_name=$(dirname "$f_ex")
         f_final=$(echo "$clean_name" | sed -E 's/\.(exemple|example)$//I; s/^(_|-)//; s/(_|-)(exemple|example)//I')
@@ -38,31 +27,16 @@ if [ -n "$FILES" ]; then
             cp "$f_ex" "$f_final_path"
             chown "$USERNAME" "$f_final_path"
             sudo -u "$USERNAME" nano "$f_final_path" < /dev/tty
-            echo "Suppression du modèle : $f_ex"
             rm "$f_ex"
         fi
     done
-else
-    echo "Aucun fichier modèle détecté."
 fi
 
-# --- 3. Gestion conditionnelle de Composer ---
-if [ -f "composer.json" ]; then
-    echo "--- Projet avec Composer détecté ---"
-    if ! command -v composer &> /dev/null; then
-        curl -sS https://getcomposer.org/installer | php
-        sudo mv composer.phar /usr/local/bin/composer
-        sudo chmod +x /usr/local/bin/composer
-    fi
+if [ -f "composer.json" ] && command -v composer &> /dev/null; then
     sudo -u "$USERNAME" composer install --no-dev --optimize-autoloader --no-interaction
-else
-    echo "--- Aucun fichier composer.json. Skip de l'installation des dépendances ---"
 fi
 
-# --- 4. Permissions ---
 echo "Réglage des permissions..."
 sudo chown -R "$USERNAME":www-data .
 [ -d "storage" ] && chmod -R 775 storage
 [ -d "bootstrap/cache" ] && chmod -R 775 bootstrap/cache
-
-echo "[OK] Déploiement PHP terminé."

@@ -23,9 +23,8 @@ ask_if_empty "APP_TYPE_INPUT" "Type (1: Java, 2: PHP)"
 
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 INSTALL_DIR="$BASE_DIR/Instalation"
+SERVICE_DIR="$BASE_DIR/Service"
 START_SCRIPT="$BASE_DIR/start_jukebox.sh"
-
-
 
 # --- Clonage ---
 sudo mkdir -p "$TARGET_DIR"
@@ -42,12 +41,26 @@ sed -i "s|^APP_PATH=.*|APP_PATH=\"$TARGET_DIR\"|" "$START_SCRIPT"
 sed -i "s|^USER_NAME=.*|USER_NAME=\"$USERNAME\"|" "$START_SCRIPT"
 [ "$APP_TYPE_INPUT" == "1" ] && APP_L="java" || APP_L="php"
 sed -i "s|^APP_TYPE=.*|APP_TYPE=\"$APP_L\"|" "$START_SCRIPT"
-# Correction du chemin d'appel pour garantir la transmission des variables
+
+# --- Exécution du script d'installation (Appel UNIQUE) ---
 if [ -f "$INSTALL_DIR/$APP_L.sh" ]; then
     bash "$INSTALL_DIR/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
 else
     echo "Erreur : Script d'installation $INSTALL_DIR/$APP_L.sh introuvable."
     exit 1
 fi
-# --- Exécution du script d'installation ---
-bash "$INSTALL_DIR/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
+
+# --- Activation du service systemd ---
+echo "Finalisation : Activation du script et du service..."
+chmod +x "$START_SCRIPT"
+
+if [ -f "$SERVICE_DIR/jukebox.service" ]; then
+    sudo sed -i "s|^ExecStart=.*|ExecStart=/bin/bash $START_SCRIPT|" "$SERVICE_DIR/jukebox.service"
+    sudo cp "$SERVICE_DIR/jukebox.service" /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable jukebox.service
+    sudo systemctl restart jukebox.service
+    echo "[OK] Jukebox opérationnel et service activé."
+else
+    echo "[ATTENTION] Fichier jukebox.service introuvable dans $SERVICE_DIR."
+fi
