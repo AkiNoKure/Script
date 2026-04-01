@@ -8,26 +8,30 @@ log_msg() {
     echo "[$(date '+%H-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
 }
 
-# Attente du répertoire (indispensable au boot)
+echo "--- Nouvelle tentative de démarrage ---" >> "$LOG_FILE"
+
+# Attente du répertoire
 while [ ! -d "$APP_PATH" ]; do 
-    log_msg "Répertoire $APP_PATH introuvable, attente..."
+    log_msg "ATTENTE : Répertoire $APP_PATH introuvable..."
     sleep 2
 done
 
-if [ "$APP_TYPE" == "java" ]; then
-    JAR_FILE=$(find "$APP_PATH" -name "*.jar" | grep "/dist/" | head -n 1)
-    if [ -n "$JAR_FILE" ]; then
-        log_msg "Lancement Java : $JAR_FILE"
-        cd "$APP_PATH"
-        exec java -jar "$JAR_FILE" >> "$LOG_FILE" 2>&1
-    else
-        log_msg "ERREUR : JAR introuvable."
-        exit 1
+if [ "$APP_TYPE" == "php" ]; then
+    log_msg "Diagnostic PHP en cours..."
+    cd "$APP_PATH" || { log_msg "ERREUR : Impossible d'accéder à $APP_PATH"; exit 1; }
+
+    # Vérification du contenu du dossier pour le log
+    FILES_FOUND=$(ls -F | grep ".php" | tr '\n' ' ')
+    log_msg "Fichiers PHP détectés dans $(pwd) : $FILES_FOUND"
+
+    if [ -z "$FILES_FOUND" ]; then
+        log_msg "ALERTE : Aucun fichier .php trouvé dans $APP_PATH. Le 404 est normal."
     fi
-elif [ "$APP_TYPE" == "php" ]; then
-    cd "$APP_PATH" || exit 1
+
+    # Nettoyage du port
     sudo fuser -k 51043/tcp 2>/dev/null || true
-    log_msg "Lancement PHP sur port 51043 dans $APP_PATH"
-    # Lancement explicite sur toutes les interfaces
-    exec php -S 0.0.0.0:51043 >> "$LOG_FILE" 2>&1
+    
+    log_msg "Lancement du serveur sur 0.0.0.0:51043"
+    # L'option -t force le répertoire racine du serveur
+    exec php -S 0.0.0.0:51043 -t "$APP_PATH" >> "$LOG_FILE" 2>&1
 fi
