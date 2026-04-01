@@ -1,105 +1,101 @@
 #!/bin/bash
-# Arrêt immédiat si une commande échoue
 set -e
 
-LOG_FILE="/var/log/jukebox_deploy.log"
-export TERM=${TERM:-xterm-256color}
+# Couleurs pour le suivi visuel
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
 
-ask_if_empty() {
-    local var_name=$1
-    local prompt_msg=$2
-    if [ -z "${!var_name}" ]; then
-        read -p "$prompt_msg: " input_val
-        eval "$var_name=\"$input_val\""
+echo -e "${BLUE}=====================================================${NC}"
+echo -e "${BLUE}   INITIALISATION & DÉPLOIEMENT JUKEBOX (2026)      ${NC}"
+echo -e "${BLUE}=====================================================${NC}"
+
+# 1. Installation Logiciels
+echo -e "${YELLOW}[1/7] Installation des dépendances système...${NC}"
+sudo apt update -qq
+sudo apt install -y apache2 php php-common php-mysql php-sqlite3 php-json php-curl php-mbstring php-xml php-zip mariadb-server openjdk-21-jdk openjdk-21-jre vlc phpmyadmin sqlite3 chromium wtype
+
+# 2. Utilisateurs
+echo -e "${YELLOW}[2/7] Configuration des utilisateurs...${NC}"
+for USR in "technicien_BTC" "jukebox_play"; do
+    if ! id "$USR" &>/dev/null; then
+        sudo adduser --disabled-password --gecos "" "$USR"
+        echo "$USR:raspberry" | sudo chpasswd
     fi
-}
+done
+sudo usermod -aG sudo jukebox_play
 
-echo "--- [$(date)] Début du déploiement Jukebox ---"
+# 3. Détection d'état
+USERNAME="jukebox_play"
+TARGET_DIR="/home/$USERNAME/Application/Jukebox"
+BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
+START_SCRIPT="$BASE_DIR/start_jukebox.sh"
 
-ask_if_empty "USERNAME" "Nom de l'utilisateur système"
-read -p "Répertoire d'installation (Défaut: /home/$USERNAME/Application/Jukebox) : " TARGET_DIR
-TARGET_DIR=${TARGET_DIR:-"/home/$USERNAME/Application/Jukebox"}
+if [ -d "$TARGET_DIR" ] && [ -f "$START_SCRIPT" ]; then
+    CURRENT_APP=$(grep "APP_TYPE=" "$START_SCRIPT" | cut -d'"' -f2)
+    echo -e "${BLUE}--> Installation existante détectée : ${GREEN}$CURRENT_APP${NC}"
+    echo "1) Mettre à jour"
+    echo "2) Écraser et changer de technologie"
+    read -p "Choix : " INSTALL_MODE
+    if [ "$INSTALL_MODE" == "2" ]; then
+        echo -e "${RED}Nettoyage complet pour changement de technologie...${NC}"
+        sudo systemctl stop jukebox.service 2>/dev/null || true
+        sudo rm -rf "$TARGET_DIR"/*
+    fi
+fi
 
-# --- Sauvegarde pré-déploiement ---
+# 4. Sauvegarde
+echo -e "${YELLOW}[3/7] Gestion de la sauvegarde...${NC}"
 if [ -d "$TARGET_DIR" ]; then
-    echo "Préparation de la sauvegarde (Fichiers + BDD)..."
     sudo mkdir -p "${TARGET_DIR}_backup"
-    # Nettoyage de l'ancien backup pour éviter les mélanges
     sudo rm -rf "${TARGET_DIR}_backup"/*
-    # Backup BDD
     sudo mysqldump jukebox_db > "${TARGET_DIR}_backup/jukebox_dump.sql" 2>/dev/null || true
-    [ -f "$TARGET_DIR/jukebox.sqlite" ] && cp "$TARGET_DIR/jukebox.sqlite" "${TARGET_DIR}_backup/"
-    # Backup Fichiers
+    [ -f "$TARGET_DIR/jukebox.sqlite" ] && sudo cp "$TARGET_DIR/jukebox.sqlite" "${TARGET_DIR}_backup/"
     sudo cp -r "$TARGET_DIR"/* "${TARGET_DIR}_backup/" 2>/dev/null || true
 fi
 
-# --- Choix de la source ---
-echo "Source du déploiement :"
-echo "1) Dépôt Git"
-echo "2) Archive locale (.zip, .tar.gz, .tgz)"
-read -p "Votre choix : " SOURCE_CHOICE
-
+# 5. Récupération Source
+echo -e "${YELLOW}[4/7] Récupération des sources...${NC}"
+echo "1) Dépôt Git  2) Archive locale"
+read -p "Choix : " SOURCE_CHOICE
 sudo mkdir -p "$TARGET_DIR"
 sudo chown "$USERNAME":"$USERNAME" "$TARGET_DIR"
 
 if [ "$SOURCE_CHOICE" == "1" ]; then
-    ask_if_empty "REPO_URL" "URL du dépôt Git"
+    read -p "URL Git : " REPO_URL
     if [ ! -d "$TARGET_DIR/.git" ]; then
-        echo "Clonage du dépôt..."
-        sudo -u "$USERNAME" git clone "$REPO_URL" "$TARGET_DIR"/.
+        sudo -u "$USERNAME" git clone "$REPO_URL" "$TARGET_DIR"
     else
-        echo "Mise à jour via Git..."
-        cd "$TARGET_DIR" && sudo -u "$USERNAME" git pull
+        cd "$TARGET_DIR" && sudo -u "$USERNAME" git fetch --all && sudo -u "$USERNAME" git reset --hard origin/$(sudo -u "$USERNAME" git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
     fi
 else
-    read -e -p "Chemin complet de l'archive : " ARCHIVE_PATH
-    if [ -f "$ARCHIVE_PATH" ]; then
-        echo "Extraction de l'archive..."
-        if [[ "$ARCHIVE_PATH" == *.zip ]]; then
-            sudo unzip -o "$ARCHIVE_PATH" -d "$TARGET_DIR"
-        elif [[ "$ARCHIVE_PATH" == *.tar.gz ]] || [[ "$ARCHIVE_PATH" == *.tgz ]]; then
-            sudo tar -xzf "$ARCHIVE_PATH" -C "$TARGET_DIR"
-        fi
-        sudo chown -R "$USERNAME":"$USERNAME" "$TARGET_DIR"
-    else
-        echo "ERREUR : Archive introuvable."; exit 1
+    read -e -p "Chemin archive : " ARCHIVE_PATH
+    if [[ "$ARCHIVE_PATH" == *.zip ]]; then 
+        sudo unzip -o "$ARCHIVE_PATH" -d "$TARGET_DIR"
+    else 
+        sudo tar -xzf "$ARCHIVE_PATH" -C "$TARGET_DIR"
     fi
 fi
 
-# --- Configuration du lanceur ---
-BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
-INSTALL_DIR="$BASE_DIR/Instalation"
-SERVICE_DIR="$BASE_DIR/Service"
-START_SCRIPT="$BASE_DIR/start_jukebox.sh"
-
-ask_if_empty "APP_TYPE_INPUT" "Type (1: Java, 2: PHP)"
+# 6. Configuration Application
+echo -e "${YELLOW}[5/7] Configuration spécifique...${NC}"
+echo "Type : 1) Java  2) PHP"
+read -p "Choix : " APP_TYPE_INPUT
 [ "$APP_TYPE_INPUT" == "1" ] && APP_L="java" || APP_L="php"
 
 sed -i "s|^APP_PATH=.*|APP_PATH=\"$TARGET_DIR\"|" "$START_SCRIPT"
-sed -i "s|^USER_NAME=.*|USER_NAME=\"$USERNAME\"|" "$START_SCRIPT"
 sed -i "s|^APP_TYPE=.*|APP_TYPE=\"$APP_L\"|" "$START_SCRIPT"
-chmod +x "$START_SCRIPT"
 
-# --- Installation ---
-if [ -f "$INSTALL_DIR/$APP_L.sh" ]; then
-    bash "$INSTALL_DIR/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
-else
-    echo "ERREUR : Fichier d'installation $APP_L.sh manquant."
-    exit 1
+bash "$BASE_DIR/Instalation/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
+
+# 7. Sécurité SSH
+echo -e "${YELLOW}[6/7] Restrictions SSH...${NC}"
+sudo deluser jukebox_play sudo || true
+if ! grep -q "AllowUsers" /etc/ssh/sshd_config; then
+    echo "AllowUsers administrateur technicien_BTC" | sudo tee -a /etc/ssh/sshd_config
+    sudo systemctl restart ssh
 fi
 
-# --- Service Systemd ---
-if [ -f "$SERVICE_DIR/jukebox.service" ]; then
-    echo "Installation du service système..."
-    sudo sed -i "s|^ExecStart=.*|ExecStart=/bin/bash $START_SCRIPT|" "$SERVICE_DIR/jukebox.service"
-    sudo cp "$SERVICE_DIR/jukebox.service" /etc/systemd/system/
-    sudo systemctl daemon-reload
-    sudo systemctl enable jukebox.service
-    sudo systemctl restart jukebox.service
-fi
-
-echo "Finalisation des permissions..."
-sudo chmod -R a+x "$BASE_DIR"
-sudo chmod a+x "$START_SCRIPT"
-
-echo "--- [OK] Déploiement terminé avec succès ---"
+echo -e "${GREEN}[7/7] DÉPLOIEMENT TERMINÉ !${NC}"

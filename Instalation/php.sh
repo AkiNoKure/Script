@@ -1,43 +1,38 @@
 #!/bin/bash
-TARGET_DIR=$1
-USERNAME=$2
-
-echo "--- Dépendances PHP ---"
-sudo apt-get update -qq
-sudo apt-get install -y php-cli php-zip unzip curl php-xml php-mbstring
-
+GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
+TARGET_DIR=$1; USERNAME=$2
 cd "$TARGET_DIR" || exit 1
 
-# Appel BDD centralisé
-bash "$(dirname "$0")/bdd.sh" "$TARGET_DIR" "$USERNAME" "php"
+echo -e "${BLUE}--- [PHP] Initialisation ---${NC}"
+bash "$(dirname "$0")/../bdd.sh" "$TARGET_DIR" "$USERNAME" "php"
 
-echo "--- Scan des fichiers de configuration ---"
+# Modèles
 FILES=$(find . -type f \( -iname "*exem*" -o -iname "*exam*" \))
+for f_ex in $FILES; do
+    [[ "$f_ex" == *"/.git/"* ]] || [[ "$f_ex" == *"/vendor/"* ]] && continue
+    f_final=$(basename "$f_ex" | sed -E 's/\.(exemple|example|ex)$//I')
+    echo "Configurer $f_final ? (o/n)"
+    read -r choix < /dev/tty
+    if [[ "$choix" =~ ^[oO]$ ]]; then
+        cp "$f_ex" "./$f_final"
+        sudo -u "$USERNAME" nano "./$f_final" < /dev/tty > /dev/tty
+    fi
+done
 
-if [ -n "$FILES" ]; then
-    for f_ex in $FILES; do
-        [[ "$f_ex" == *"/.git/"* ]] || [[ "$f_ex" == *"/vendor/"* ]] && continue
-        
-        clean_name=$(basename "$f_ex")
-        f_final=$(echo "$clean_name" | sed -E 's/\.(exemple|example|ex|exemplaire)$//I; s/^(_|-)//; s/(_|-)(exemple|example)//I')
-        [ "$f_final" == "$clean_name" ] && f_final="${clean_name%.*}"
-        f_final_path="$(dirname "$f_ex")/$f_final"
+# Kiosque
+USER_HOME="/home/$USERNAME"
+mkdir -p "$USER_HOME/.config/labwc"
+echo "chromium http://localhost:51043 --kiosk --noerrdialogs --disable-infobars --no-first-run --enable-features=OverlayScrollbar --start-maximized &" > "$USER_HOME/.config/labwc/autostart"
+echo "$USER_HOME/switchtab.sh &" >> "$USER_HOME/.config/labwc/autostart"
 
-        echo "Modèle détecté : $f_ex"
-        echo "Configurer $f_final ? (o/n)"
-        read -r choix < /dev/tty
-        
-        if [[ "$choix" =~ ^[oO]$ ]]; then
-            [ -f "$f_final_path" ] && cp "$f_final_path" "${f_final_path}.bak"
-            cp "$f_ex" "$f_final_path"
-            chown "$USERNAME" "$f_final_path"
-            
-            # Ouverture stable de nano
-            sudo -u "$USERNAME" nano "$f_final_path" < /dev/tty > /dev/tty
-            [ -f "$f_final_path" ] && rm "$f_ex"
-        fi
-    done
-fi
+cat <<EOF > "$USER_HOME/switchtab.sh"
+#!/bin/bash
+while [[ -z \$(pgrep chromium) ]]; do sleep 5; done
+while true; do wtype -M ctrl -P Tab -p Tab; sleep 10; done
+EOF
+chmod +x "$USER_HOME/switchtab.sh"
+chown -R "$USERNAME":"$USERNAME" "$USER_HOME"
 
-echo "Réglage des permissions..."
+# Permissions
 sudo chown -R "$USERNAME":www-data .
+sudo chmod -R 755 .
