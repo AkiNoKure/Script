@@ -1,5 +1,5 @@
 #!/bin/bash
-GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
+GREEN='\033[0;32m'; BLUE='\033[0;34m'; RED='\033[0;31m'; NC='\033[0m'
 TARGET_DIR=$1; USERNAME=$2; APP_TYPE=$3
 
 echo -e "${BLUE}--- Analyse des ressources BDD ---${NC}"
@@ -13,10 +13,8 @@ if [ -n "$SQL_REAL" ] || [ -n "$SQL_EX" ]; then
     sudo mysql -e "CREATE DATABASE IF NOT EXISTS jukebox_db;"
     sudo mysql -e "GRANT ALL PRIVILEGES ON jukebox_db.* TO '$USERNAME'@'localhost' IDENTIFIED BY 'password';"
     if [ -n "$SQL_REAL" ]; then 
-        echo "Importation du fichier réel : $(basename "$SQL_REAL")"
         sudo mysql jukebox_db < "$SQL_REAL"
     elif [ -n "$SQL_EX" ]; then
-        echo "Configuration à partir du modèle : $(basename "$SQL_EX")"
         FINAL="${SQL_EX%.*}"
         cp "$SQL_EX" "$FINAL"
         sudo -u "$USERNAME" nano "$FINAL" < /dev/tty > /dev/tty
