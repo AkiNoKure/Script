@@ -1,61 +1,63 @@
 #!/bin/bash
+# Couleurs pour le suivi
+GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
+
 TARGET_DIR=$1
 USERNAME=$2
-
-echo "--- Dépendances Java ---"
-sudo apt-get update -qq
-sudo apt-get install -y default-jdk ant
-
 cd "$TARGET_DIR" || exit 1
 
+echo -e "${BLUE}--- [JAVA] Initialisation de l'environnement ---${NC}"
+
+# Appel du gestionnaire de base de données
 bash "$(dirname "$0")/bdd.sh" "$TARGET_DIR" "$USERNAME" "java"
 
-export JAVA_HOME=$(readlink -f $(which java) | sed "s:/bin/java::")
-JAVA_VER=$(javac -version 2>&1 | awk '{print $2}' | cut -d'.' -f1)
-
-# Mise à jour des versions de compilation dans project.properties
-find . -name "project.properties" -exec sed -i "s/javac.source=.*/javac.source=$JAVA_VER/g" {} +
-find . -name "project.properties" -exec sed -i "s/javac.target=.*/javac.target=$JAVA_VER/g" {} +
-
-echo "--- Scan des modèles ---"
+# 1. Gestion des fichiers modèles (.java.exemple)
+echo -e "${BLUE}--- [JAVA] Scan des fichiers modèles ---${NC}"
 FILES=$(find . -type f \( -iname "*exem*" -o -iname "*exam*" \))
-
 if [ -n "$FILES" ]; then
     for f_ex in $FILES; do
         [[ "$f_ex" == *"/.git/"* ]] || [[ "$f_ex" == *"/build/"* ]] || [[ "$f_ex" == *"/dist/"* ]] && continue
+        f_final=$(basename "$f_ex" | sed -E 's/\.(exemple|example)$//I')
         
-        clean_name=$(basename "$f_ex")
-        f_final=$(echo "$clean_name" | sed -E 's/\.(exemple|example)$//I; s/^(_|-)//; s/(_|-)(exemple|example)//I')
-        f_final_path="$(dirname "$f_ex")/$f_final"
-
-        echo "Modèle détecté : $f_ex"
+        echo -e "Modèle détecté : ${GREEN}$f_ex${NC}"
         echo "Configurer $f_final ? (o/n)"
         read -r choix < /dev/tty
-        
         if [[ "$choix" =~ ^[oO]$ ]]; then
-            # Backup si le fichier existe déjà
-            [ -f "$f_final_path" ] && cp "$f_final_path" "${f_final_path}.bak"
-            
-            cp "$f_ex" "$f_final_path"
-            base_class_name=$(echo "$f_final" | sed 's/\.java//')
-            sed -i "s/${base_class_name}_exemple/${base_class_name}/g" "$f_final_path"
-            sed -i "s/${base_class_name}_example/${base_class_name}/g" "$f_final_path"
-            chown "$USERNAME" "$f_final_path"
-            
-            # Correction affichage nano
-            sudo -u "$USERNAME" nano "$f_final_path" < /dev/tty > /dev/tty
+            cp "$f_ex" "./$f_final"
+            sudo -u "$USERNAME" nano "./$f_final" < /dev/tty > /dev/tty
             rm "$f_ex"
         fi
     done
 fi
 
+# 2. Compilation Ant (Doc Section 3 - JDK 21)
+echo -e "${BLUE}--- [JAVA] Compilation de l'application (Ant) ---${NC}"
+export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-armhf"
 ANT_PATH=$(find . -name "build.xml" | head -n 1)
 if [ -n "$ANT_PATH" ]; then
     cd "$(dirname "$ANT_PATH")"
-    echo "Lancer compilation (ant jar) ? (o/n)"
-    read -r build_choice < /dev/tty
-    if [[ "$build_choice" =~ ^[oO]$ ]]; then
-        sudo -u "$USERNAME" JAVA_HOME="$JAVA_HOME" ant clean
-        sudo -u "$USERNAME" JAVA_HOME="$JAVA_HOME" ant jar
-    fi
+    sudo -u "$USERNAME" JAVA_HOME="$JAVA_HOME" ant clean jar
+    echo -e "${GREEN}[OK] Compilation terminée.${NC}"
 fi
+
+# 3. Configuration Kiosque (Doc Section 7.b & 7.c)
+echo -e "${BLUE}--- [JAVA] Configuration du mode Kiosque ---${NC}"
+USER_HOME="/home/$USERNAME"
+mkdir -p "$USER_HOME/.config/labwc"
+
+# Autostart labwc
+echo "chromium http://localhost:51043 --kiosk --noerrdialogs --disable-infobars --no-first-run --enable-features=OverlayScrollbar --start-maximized &" > "$USER_HOME/.config/labwc/autostart"
+echo "$USER_HOME/switchtab.sh &" >> "$USER_HOME/.config/labwc/autostart"
+
+# Script switchtab.sh
+cat <<EOF > "$USER_HOME/switchtab.sh"
+#!/bin/bash
+# Attente de Chromium (Doc 7.c)
+while [[ -z \$(pgrep chromium) ]]; do sleep 5; done
+# Rotation des onglets (Doc 7.c)
+while true; do wtype -M ctrl -P Tab -p Tab; sleep 10; done
+EOF
+
+chmod +x "$USER_HOME/switchtab.sh"
+chown -R "$USERNAME":"$USERNAME" "$USER_HOME"
+echo -e "${GREEN}[OK] Environnement Java prêt.${NC}"
