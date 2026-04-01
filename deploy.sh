@@ -24,7 +24,6 @@ ask_if_empty "APP_TYPE_INPUT" "Type (1: Java, 2: PHP)"
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 INSTALL_DIR="$BASE_DIR/Instalation"
 SERVICE_DIR="$BASE_DIR/Service"
-GUI_DIR="$BASE_DIR/GUI"
 START_SCRIPT="$BASE_DIR/start_jukebox.sh"
 
 # --- 2. Préparation du répertoire cible ---
@@ -63,38 +62,23 @@ else
     exit 1
 fi
 
-# --- 6. Configuration du lancement (Service vs GUI) ---
+# --- 6. Configuration du service Systemd ---
 echo "Finalisation : Configuration du système..."
 chmod +x "$START_SCRIPT"
 
-if [ "$APP_L" == "php" ]; then
-    echo "Configuration du service Systemd (Mode Serveur)..."
-    if [ -f "$SERVICE_DIR/jukebox.service" ]; then
-        sudo sed -i "s|^ExecStart=.*|ExecStart=/bin/bash $START_SCRIPT|" "$SERVICE_DIR/jukebox.service"
-        sudo cp "$SERVICE_DIR/jukebox.service" /etc/systemd/system/
-        sudo systemctl daemon-reload
-        sudo systemctl enable jukebox.service
-        sudo systemctl restart jukebox.service
-    fi
-else
-    echo "Configuration de l'Auto-start graphique (Mode Java)..."
-    AUTO_DIR="/home/$USERNAME/.config/autostart"
-    sudo -u "$USERNAME" mkdir -p "$AUTO_DIR"
-    if [ -f "$GUI_DIR/jukebox.desktop" ]; then
-        sudo sed -i "s|^Exec=.*|Exec=/bin/bash $START_SCRIPT|" "$GUI_DIR/jukebox.desktop"
-        sudo cp "$GUI_DIR/jukebox.desktop" "$AUTO_DIR/"
-        sudo chown "$USERNAME":"$USERNAME" "$AUTO_DIR/jukebox.desktop"
-        sudo chmod +x "$AUTO_DIR/jukebox.desktop"
-    fi
-    # Désactivation du service systemd pour Java (conflit d'affichage)
-    sudo systemctl stop jukebox.service 2>/dev/null
-    sudo systemctl disable jukebox.service 2>/dev/null
+if [ -f "$SERVICE_DIR/jukebox.service" ]; then
+    sudo sed -i "s|^ExecStart=.*|ExecStart=/bin/bash $START_SCRIPT|" "$SERVICE_DIR/jukebox.service"
+    sudo cp "$SERVICE_DIR/jukebox.service" /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable jukebox.service
+    sudo systemctl restart jukebox.service
+    echo "[OK] Service configuré et démarré."
 fi
-# Dans deploy.sh, juste avant le message de fin
+
+# Finalisation des permissions d'exécution
 echo "Finalisation des permissions d'exécution..."
 sudo chmod -R a+x "$BASE_DIR"
 sudo chmod a+x "$START_SCRIPT"
 
-# Nettoyage des anciens logs de test
 sudo rm -f /tmp/jukebox_start.log
 echo "[OK] Déploiement terminé."
