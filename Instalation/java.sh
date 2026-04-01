@@ -22,18 +22,14 @@ done
 # Compilation
 export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-armhf"
 ANT_PATH=$(find . -name "build.xml" | head -n 1)
-[ -n "$ANT_PATH" ] && sudo -u "$USERNAME" ant -f "$ANT_PATH" jar
+if [ -n "$ANT_PATH" ]; then
+    sudo -u "$USERNAME" ant -f "$ANT_PATH" jar
+fi
 
-# Kiosque
-USER_HOME="/home/$USERNAME"
-mkdir -p "$USER_HOME/.config/labwc"
-echo "chromium http://localhost:51043 --kiosk --noerrdialogs --disable-infobars --no-first-run --enable-features=OverlayScrollbar --start-maximized &" > "$USER_HOME/.config/labwc/autostart"
-echo "$USER_HOME/switchtab.sh &" >> "$USER_HOME/.config/labwc/autostart"
-
-cat <<EOF > "$USER_HOME/switchtab.sh"
-#!/bin/bash
-while [[ -z \$(pgrep chromium) ]]; do sleep 5; done
-while true; do wtype -M ctrl -P Tab -p Tab; sleep 10; done
-EOF
-chmod +x "$USER_HOME/switchtab.sh"
-chown -R "$USERNAME":"$USERNAME" "$USER_HOME"
+# Lancement de l'application Java (GUI ou console)
+JAR_FILE=$(find . -type f -name "*.jar" | grep "/dist/" | head -n 1)
+if [ -n "$JAR_FILE" ]; then
+    echo -e "${GREEN}Lancement de l'application Java : $JAR_FILE${NC}"
+    sudo -u "$USERNAME" java -jar "$JAR_FILE" &
+else
+    echo -e "${BLUE}Aucun fichier JAR trouvé dans ./dist/. L'application n'a pas
