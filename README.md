@@ -58,7 +58,7 @@ nohup ./deploy.sh > deploy.log 2>&1 &
 ## 7. Prérequis techniques
 * Système Linux (Debian/Ubuntu recommandé).
 * Droits sudo configurés pour l'utilisateur.
-* Git et MariaDB/MySQL installés.
+* Git installés.
 
 ---
 Documentation mise à jour - Campus La Futaie - 2026
