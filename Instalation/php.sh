@@ -1,5 +1,4 @@
 #!/bin/bash
-# Couleurs pour le suivi
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 
 TARGET_DIR=$1
@@ -11,7 +10,7 @@ echo -e "${BLUE}--- [PHP] Initialisation de l'environnement ---${NC}"
 # Appel du gestionnaire de base de données
 bash "$(dirname "$0")/bdd.sh" "$TARGET_DIR" "$USERNAME" "php"
 
-# 1. Gestion des fichiers de configuration modèles
+# 1. Gestion des fichiers modèles
 echo -e "${BLUE}--- [PHP] Scan des fichiers modèles ---${NC}"
 FILES=$(find . -type f \( -iname "*exem*" -o -iname "*exam*" \))
 if [ -n "$FILES" ]; then
@@ -33,16 +32,14 @@ if [ -n "$FILES" ]; then
     done
 fi
 
-# 2. Configuration Kiosque (Doc Section 7.b & 7.c)
+# 2. Configuration Kiosque
 echo -e "${BLUE}--- [PHP] Configuration du mode Kiosque ---${NC}"
 USER_HOME="/home/$USERNAME"
 mkdir -p "$USER_HOME/.config/labwc"
 
-# Autostart labwc (Port 51043 conforme à la doc)
 echo "chromium http://localhost:51043 --kiosk --noerrdialogs --disable-infobars --no-first-run --enable-features=OverlayScrollbar --start-maximized &" > "$USER_HOME/.config/labwc/autostart"
 echo "$USER_HOME/switchtab.sh &" >> "$USER_HOME/.config/labwc/autostart"
 
-# Script switchtab.sh conforme à la doc
 cat <<EOF > "$USER_HOME/switchtab.sh"
 #!/bin/bash
 while [[ -z \$(pgrep chromium) ]]; do sleep 5; done
@@ -52,7 +49,7 @@ EOF
 chmod +x "$USER_HOME/switchtab.sh"
 chown -R "$USERNAME":"$USERNAME" "$USER_HOME"
 
-# 3. Permissions finales pour le serveur Web
+# 3. Permissions finales
 echo -e "${BLUE}--- [PHP] Réglage des permissions ---${NC}"
 sudo chown -R "$USERNAME":www-data .
 sudo chmod -R 755 .

@@ -1,5 +1,4 @@
 #!/bin/bash
-# Couleurs pour le suivi
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 
 TARGET_DIR=$1
@@ -11,7 +10,7 @@ echo -e "${BLUE}--- [JAVA] Initialisation de l'environnement ---${NC}"
 # Appel du gestionnaire de base de données
 bash "$(dirname "$0")/bdd.sh" "$TARGET_DIR" "$USERNAME" "java"
 
-# 1. Gestion des fichiers modèles (.java.exemple)
+# 1. Gestion des fichiers modèles
 echo -e "${BLUE}--- [JAVA] Scan des fichiers modèles ---${NC}"
 FILES=$(find . -type f \( -iname "*exem*" -o -iname "*exam*" \))
 if [ -n "$FILES" ]; then
@@ -30,7 +29,7 @@ if [ -n "$FILES" ]; then
     done
 fi
 
-# 2. Compilation Ant (Doc Section 3 - JDK 21)
+# 2. Compilation Ant
 echo -e "${BLUE}--- [JAVA] Compilation de l'application (Ant) ---${NC}"
 export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-armhf"
 ANT_PATH=$(find . -name "build.xml" | head -n 1)
@@ -40,21 +39,17 @@ if [ -n "$ANT_PATH" ]; then
     echo -e "${GREEN}[OK] Compilation terminée.${NC}"
 fi
 
-# 3. Configuration Kiosque (Doc Section 7.b & 7.c)
+# 3. Configuration Kiosque
 echo -e "${BLUE}--- [JAVA] Configuration du mode Kiosque ---${NC}"
 USER_HOME="/home/$USERNAME"
 mkdir -p "$USER_HOME/.config/labwc"
 
-# Autostart labwc
 echo "chromium http://localhost:51043 --kiosk --noerrdialogs --disable-infobars --no-first-run --enable-features=OverlayScrollbar --start-maximized &" > "$USER_HOME/.config/labwc/autostart"
 echo "$USER_HOME/switchtab.sh &" >> "$USER_HOME/.config/labwc/autostart"
 
-# Script switchtab.sh
 cat <<EOF > "$USER_HOME/switchtab.sh"
 #!/bin/bash
-# Attente de Chromium (Doc 7.c)
 while [[ -z \$(pgrep chromium) ]]; do sleep 5; done
-# Rotation des onglets (Doc 7.c)
 while true; do wtype -M ctrl -P Tab -p Tab; sleep 10; done
 EOF
 

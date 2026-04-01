@@ -81,7 +81,7 @@ sed -i "s|^APP_TYPE=.*|APP_TYPE=\"$APP_L\"|" "$START_SCRIPT" [cite: 1]
 
 bash "$BASE_DIR/Instalation/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
 
-# 7. Sécurité SSH (Doc Section 9)
+# 7. Sécurité SSH
 echo -e "${YELLOW}[6/7] Application des restrictions de sécurité...${NC}"
 sudo deluser jukebox_play sudo || true
 if ! grep -q "AllowUsers" /etc/ssh/sshd_config; then
