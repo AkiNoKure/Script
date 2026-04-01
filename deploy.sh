@@ -63,7 +63,7 @@ read -p "Choix : " SOURCE_CHOICE
 sudo mkdir -p "$TARGET_DIR"
 if [ "$SOURCE_CHOICE" == "1" ]; then
     read -p "URL Git : " REPO_URL
-    [ ! -d "$TARGET_DIR/.git" ] && sudo -u "$USERNAME" git clone "$REPO_URL" "$TARGET_DIR"/. || (cd "$TARGET_DIR" && sudo -u "$USERNAME" git pull) [cite: 1]
+    [ ! -d "$TARGET_DIR/.git" ] && sudo -u "$USERNAME" git clone "$REPO_URL" "$TARGET_DIR"/. || (cd "$TARGET_DIR" && sudo -u "$USERNAME" git pull)
 else
     read -e -p "Chemin complet archive : " ARCHIVE_PATH
     if [[ "$ARCHIVE_PATH" == *.zip ]]; then sudo unzip -o "$ARCHIVE_PATH" -d "$TARGET_DIR" [cite: 1]
