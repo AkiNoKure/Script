@@ -66,8 +66,8 @@ if [ "$SOURCE_CHOICE" == "1" ]; then
     [ ! -d "$TARGET_DIR/.git" ] && sudo -u "$USERNAME" git clone "$REPO_URL" "$TARGET_DIR"/. || (cd "$TARGET_DIR" && sudo -u "$USERNAME" git pull)
 else
     read -e -p "Chemin complet archive : " ARCHIVE_PATH
-    if [[ "$ARCHIVE_PATH" == *.zip ]]; then sudo unzip -o "$ARCHIVE_PATH" -d "$TARGET_DIR" [cite: 1]
-    else sudo tar -xzf "$ARCHIVE_PATH" -C "$TARGET_DIR"; fi [cite: 1]
+    if [[ "$ARCHIVE_PATH" == *.zip ]]; then sudo unzip -o "$ARCHIVE_PATH" -d "$TARGET_DIR" 
+    else sudo tar -xzf "$ARCHIVE_PATH" -C "$TARGET_DIR"; fi 
 fi
 
 # 6. Type d'application et Installation
@@ -76,8 +76,8 @@ echo "Type : 1) Java  2) PHP"
 read -p "Choix : " APP_TYPE_INPUT
 [ "$APP_TYPE_INPUT" == "1" ] && APP_L="java" || APP_L="php"
 
-sed -i "s|^APP_PATH=.*|APP_PATH=\"$TARGET_DIR\"|" "$START_SCRIPT" [cite: 1]
-sed -i "s|^APP_TYPE=.*|APP_TYPE=\"$APP_L\"|" "$START_SCRIPT" [cite: 1]
+sed -i "s|^APP_PATH=.*|APP_PATH=\"$TARGET_DIR\"|" "$START_SCRIPT"
+sed -i "s|^APP_TYPE=.*|APP_TYPE=\"$APP_L\"|" "$START_SCRIPT"
 
 bash "$BASE_DIR/Instalation/$APP_L.sh" "$TARGET_DIR" "$USERNAME"
 
