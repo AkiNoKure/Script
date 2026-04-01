@@ -1,51 +1,47 @@
 # Projet Jukebox - Campus La Futaie
 
 ## 1. Contexte du projet
-Ce projet a été réalisé dans le cadre d'un concours interne au Campus La Futaie. L'objectif est de concevoir un Jukebox fonctionnel et efficace, intégrant à la fois des composants matériels et une infrastructure logicielle robuste.
+Ce projet a été réalisé dans le cadre d'un concours interne au Campus La Futaie. L'objectif est de concevoir un Jukebox fonctionnel intégrant des composants matériels et une infrastructure logicielle automatisée.
 
-L'équipe se charge de l'intégralité de la chaîne de valeur :
-* Mise en place du matériel (boutons physiques, système d'affichage et diffusion sonore).
-* Développement des scripts de déploiement automatisés pour assurer la portabilité de la solution.
-* Documentation technique pour la maintenance et les futures itérations.
+L'équipe assure :
+* La mise en place du matériel (boutons, affichage, son).
+* Le développement de scripts de déploiement et de gestion de base de données.
+* La documentation technique pour la maintenance.
 
 ## 2. Architecture des scripts
-Le système de déploiement est conçu pour être hybride : il peut être exécuté manuellement par un administrateur via un terminal ou déclenché automatiquement par une interface web.
+Le système repose sur une structure modulaire pour le déploiement et la gestion des données.
 
 ### Structure du répertoire
-* **deploy.sh** : Script principal de gestion. Il centralise la collecte des informations (utilisateur, URL du dépôt, type d'application).
+* **deploy.sh** : Script principal de gestion du déploiement (interactif ou automatique).
+* **bdd.sh** : Script de gestion de la base de données (exportation, importation et configuration).
 * **Instalation/** : Dossier contenant les modules de configuration spécifiques :
-    * **java.sh** : Script dédié aux applications Java/Maven.
-    * **php.sh** : Script dédié aux applications PHP/Composer.
+    * **java.sh** : Déploiement d'applications Java/Maven.
+    * **php.sh** : Déploiement d'applications PHP/Composer.
 
-## 3. Fonctionnement du déploiement
-Les scripts utilisent un mécanisme de détection de variables pour s'adapter à l'environnement d'exécution.
+## 3. Fonctionnement
+### Déploiement (deploy.sh)
+Le script s'adapte à l'environnement :
+* **Mode Interactif** : Questions posées à l'utilisateur si les variables sont absentes.
+* **Mode Automatique** : Utilisation des variables d'environnement (ex: `USERNAME=user REPO_URL=http://... APP_TYPE=1 ./deploy.sh`).
 
-### Mode Interactif (Terminal)
-Si les variables nécessaires ne sont pas définies au lancement, le script `deploy.sh` pose des questions à l'utilisateur pour configurer le déploiement.
-
-### Mode Automatique (Web / Script)
-Pour un déploiement sans intervention humaine, les variables doivent être passées en amont de l'exécution.
-Exemple de commande :
-`USERNAME=user REPO_URL=http://... TARGET_DIR=/path APP_TYPE=1 ./deploy.sh`
+### Base de données (bdd.sh)
+Ce script permet d'automatiser les interactions avec le serveur de base de données, notamment pour la sauvegarde et la restauration des schémas nécessaires au Jukebox.
 
 ## 4. Détails des modules d'installation
+### Module PHP (php.sh)
+* Vérification de PHP et Composer.
+* Installation des dépendances.
+* Gestion du fichier `.env` et des permissions (stockage/cache).
 
-### Module PHP (`php.sh`)
-* Vérification de la présence de PHP et Composer.
-* Installation des dépendances via Composer avec optimisation de l'autoloader.
-* Création automatique du fichier .env si un fichier .env.example est présent.
-* Configuration des permissions sur les répertoires de stockage et de cache.
-
-### Module Java (`java.sh`)
-* Vérification de la présence de Java et Maven.
-* Compilation du projet et génération du fichier JAR en ignorant les tests pour accélérer le déploiement.
-* Identification automatique du fichier JAR généré.
-* Lancement de l'application en arrière-plan avec redirection des flux vers un fichier app.log.
+### Module Java (java.sh)
+* Vérification de Java et Maven.
+* Compilation et génération du fichier JAR (optimisée sans tests).
+* Exécution en arrière-plan avec journalisation dans `app.log`.
 
 ## 5. Prérequis techniques
-* Système d'exploitation basé sur Linux (Debian/Ubuntu recommandé).
-* Droits sudo configurés pour l'utilisateur exécutant les scripts afin de permettre le changement d'identité utilisateur (`sudo -u`).
-* Git installé sur la machine cible.
+* Système Linux (Debian/Ubuntu recommandé).
+* Droits **sudo** configurés pour l'utilisateur.
+* **Git** et **MariaDB/MySQL** installés.
 
 ---
-*Documentation générée pour le concours interne - Campus La Futaie - 2026*
+*Documentation mise à jour - Campus La Futaie - 2026*
