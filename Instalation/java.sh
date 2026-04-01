@@ -8,6 +8,8 @@ sudo apt-get install -y default-jdk ant
 
 cd "$TARGET_DIR" || exit 1
 
+bash "$(dirname "$0")/bdd.sh" "$TARGET_DIR" "$USERNAME" "java"
+
 export JAVA_HOME=$(readlink -f $(which java) | sed "s:/bin/java::")
 JAVA_VER=$(javac -version 2>&1 | awk '{print $2}' | cut -d'.' -f1)
 

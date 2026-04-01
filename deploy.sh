@@ -28,6 +28,14 @@ INSTALL_DIR="$BASE_DIR/Instalation"
 SERVICE_DIR="$BASE_DIR/Service"
 START_SCRIPT="$BASE_DIR/start_jukebox.sh"
 
+if [ -d "$TARGET_DIR" ]; then
+    echo "Préparation de la sauvegarde (Fichiers + BDD)..."
+    sudo mkdir -p "${TARGET_DIR}_backup"
+    sudo mysqldump jukebox_db > "${TARGET_DIR}_backup/jukebox_dump.sql" 2>/dev/null || true
+    [ -f "$TARGET_DIR/jukebox.sqlite" ] && cp "$TARGET_DIR/jukebox.sqlite" "${TARGET_DIR}_backup/"
+    sudo cp -r "$TARGET_DIR"/* "${TARGET_DIR}_backup/" 2>/dev/null || true
+fi
+
 # --- Préparation et Sauvegarde ---
 if [ -d "$TARGET_DIR" ]; then
     echo "Sauvegarde de l'ancienne version dans ${TARGET_DIR}_backup..."

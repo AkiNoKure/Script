@@ -8,6 +8,8 @@ sudo apt-get install -y php-cli php-zip unzip curl php-xml php-mbstring
 
 cd "$TARGET_DIR" || exit 1
 
+bash "$(dirname "$0")/bdd.sh" "$TARGET_DIR" "$USERNAME" "php"
+
 echo "--- Scan des fichiers de configuration ---"
 FILES=$(find . -type f \( -iname "*exem*" -o -iname "*exam*" \))
 
