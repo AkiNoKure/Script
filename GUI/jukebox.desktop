@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Jukebox GUI
+Comment=Lancement automatique Jukebox Java
+# Utilisation du chemin absolu vers le script
+Exec=x-terminal-emulator -e /bin/bash /home/administrateur/Documents/Script/start_jukebox.sh
+Icon=utilities-terminal
+Terminal=true
+X-GNOME-Autostart-enabled=true

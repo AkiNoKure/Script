@@ -1,14 +1,15 @@
 [Unit]
 Description=Service Jukebox PHP/Java
 After=network.target
+StartLimitIntervalSec=30
+StartLimitBurst=3
 
 [Service]
 Type=simple
-# On lance en root pour que fuser et les redirections fonctionnent
 User=root
 WorkingDirectory=/home/jukebox_play/Application/Jukebox
 ExecStart=/bin/bash /home/administrateur/Documents/Script/start_jukebox.sh
-Restart=always
+Restart=on-failure
 RestartSec=5
 
 [Install]
