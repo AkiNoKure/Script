@@ -8,6 +8,7 @@ sudo apt-get install -y php-cli php-zip unzip curl php-xml php-mbstring
 
 cd "$TARGET_DIR" || exit 1
 
+# Appel BDD centralisé
 bash "$(dirname "$0")/bdd.sh" "$TARGET_DIR" "$USERNAME" "php"
 
 echo "--- Scan des fichiers de configuration ---"
@@ -27,15 +28,12 @@ if [ -n "$FILES" ]; then
         read -r choix < /dev/tty
         
         if [[ "$choix" =~ ^[oO]$ ]]; then
-            # Backup du fichier de config s'il existait déjà
             [ -f "$f_final_path" ] && cp "$f_final_path" "${f_final_path}.bak"
-            
             cp "$f_ex" "$f_final_path"
             chown "$USERNAME" "$f_final_path"
             
-            # Ouverture stable de nano via redirection TTY complète
+            # Ouverture stable de nano
             sudo -u "$USERNAME" nano "$f_final_path" < /dev/tty > /dev/tty
-            
             [ -f "$f_final_path" ] && rm "$f_ex"
         fi
     done
