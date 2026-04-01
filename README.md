@@ -29,7 +29,7 @@ Le système repose sur une structure modulaire :
 Le script deploy.sh permet de cloner un dépôt applicatif tiers et de l'installer.
 
 Mode Interactif :
-./deploy.sh
+sudo ./deploy.sh
 
 Mode Automatique :
 USERNAME=user REPO_URL=[https://github.com/url](https://github.com/url) TARGET_DIR=/var/www/jukebox APP_TYPE=1 ./deploy.sh
@@ -43,19 +43,13 @@ Exporter la base :
 Importer une base :
 ./bdd.sh import nom_base fichier.sql
 
-## 5. Maintenance et persistance
-Par défaut, le processus s'arrête à la fermeture du terminal. Pour maintenir l'application active en arrière-plan, utilisez nohup ou screen.
-
-Exemple avec nohup :
-nohup ./deploy.sh > deploy.log 2>&1 &
-
-## 6. Procédure complète de déploiement
+## 5. Procédure complète de déploiement
 1. Récupération des scripts : Cloner le dépôt Script (voir section 2).
 2. Préparation : S'assurer que la machine possède Git et les accès sudo.
 3. Exécution du déploiement : Lancer deploy.sh.
 4. Configuration BDD : Utiliser bdd.sh pour importer le schéma SQL.
 
-## 7. Prérequis techniques
+## 6. Prérequis techniques
 * Système Linux (Debian/Ubuntu recommandé).
 * Droits sudo configurés pour l'utilisateur.
 * Git installés.
