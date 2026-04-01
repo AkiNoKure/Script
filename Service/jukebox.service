@@ -1,6 +1,8 @@
 [Unit]
 Description=Service Jukebox PHP/Java
 After=network.target
+StartLimitIntervalSec=30
+StartLimitBurst=3
 
 [Service]
 Type=simple
